@@ -1,0 +1,55 @@
+<main class="home-page">
+  <nav class="topbar" aria-label="Navigation principale">
+    <a class="brand" routerLink="/" aria-label="StockFlow, accueil">
+      <span class="brand-mark">S</span>
+      <span>StockFlow</span>
+    </a>
+    <div class="nav-actions">
+      <a class="nav-login" routerLink="/login">Se connecter</a>
+      <a class="button button-primary button-small" routerLink="/register">Créer un compte <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow"><span class="eyebrow-dot"></span> Gestion des stocks simplifiée</span>
+      <h1>Gardez le contrôle.<br /><span>Faites circuler</span><br />vos stocks.</h1>
+      <p class="hero-description">StockFlow centralise vos produits, vos fournisseurs et vos approvisionnements dans un espace clair pour prendre de meilleures décisions au quotidien.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" routerLink="/register">Découvrir StockFlow <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        <a class="button button-secondary" routerLink="/login">J'ai déjà un compte</a>
+      </div>
+      <div class="hero-note"><i class="bi bi-shield-check" aria-hidden="true"></i> Un espace de gestion sécurisé avec accès par rôle</div>
+    </div>
+
+    <div class="preview-wrap" aria-label="Aperçu illustratif de l'interface StockFlow">
+      <div class="preview-glow"></div>
+      <div class="preview-window">
+        <div class="preview-top"><div class="preview-brand"><span class="mini-mark">S</span> StockFlow</div><div class="window-dots"><span></span><span></span><span></span></div></div>
+        <div class="preview-content">
+          <div class="preview-heading"><div><span class="preview-kicker">ESPACE DE GESTION</span><h2>Vue d'ensemble</h2></div><span class="preview-date"><i class="bi bi-calendar3" aria-hidden="true"></i> Aujourd'hui</span></div>
+          <div class="preview-metrics">
+            <div class="metric-card"><span><i class="bi bi-box-seam"></i> Produits actifs</span><strong>248</strong><small class="positive"><i class="bi bi-arrow-up-right"></i> Catalogue suivi</small></div>
+            <div class="metric-card"><span><i class="bi bi-receipt"></i> Commandes en cours</span><strong>12</strong><small>Approvisionnements</small></div>
+            <div class="metric-card"><span><i class="bi bi-currency-euro"></i> Valeur du stock</span><strong>24,8 k€</strong><small>Valorisation estimée</small></div>
+          </div>
+          <div class="preview-lower"><div class="preview-chart-card"><div class="chart-title"><strong>Activité du stock</strong><span>Exemple visuel</span></div><div class="chart-bars" aria-hidden="true"><i style="height:35%"></i><i style="height:52%"></i><i style="height:43%"></i><i style="height:70%"></i><i style="height:58%"></i><i style="height:82%"></i><i style="height:65%"></i><i style="height:92%"></i><i style="height:76%"></i><i style="height:100%"></i><i style="height:80%"></i><i style="height:88%"></i></div><div class="chart-labels"><span>Jan.</span><span>Avr.</span><span>Juil.</span><span>Oct.</span></div></div><div class="preview-shortcuts"><strong>Accès rapide</strong><div><span class="shortcut-icon blue"><i class="bi bi-box-seam"></i></span><span>Produits</span><i class="bi bi-chevron-right"></i></div><div><span class="shortcut-icon violet"><i class="bi bi-truck"></i></span><span>Fournisseurs</span><i class="bi bi-chevron-right"></i></div><div><span class="shortcut-icon green"><i class="bi bi-arrow-left-right"></i></span><span>Mouvements</span><i class="bi bi-chevron-right"></i></div></div></div>
+        </div>
+      </div>
+      <div class="floating-chip"><span class="chip-icon"><i class="bi bi-check2-circle"></i></span><span><strong>Tout au même endroit</strong><small>Stocks et approvisionnements</small></span></div>
+    </div>
+  </section>
+
+  <section class="features-section" id="fonctionnalites">
+    <div class="section-heading"><span class="eyebrow">UNE VISION PLUS CLAIRE</span><h2>Les essentiels de votre stock,<br /><span>réunis au même endroit.</span></h2><p>Une interface pensée pour suivre les opérations importantes sans multiplier les outils.</p></div>
+    <div class="feature-grid">
+      <article class="feature-card"><span class="feature-icon blue"><i class="bi bi-boxes" aria-hidden="true"></i></span><h3>Produits & catégories</h3><p>Organisez votre catalogue, suivez les quantités disponibles et repérez les références à réapprovisionner.</p></article>
+      <article class="feature-card"><span class="feature-icon purple"><i class="bi bi-truck" aria-hidden="true"></i></span><h3>Fournisseurs & commandes</h3><p>Centralisez les fournisseurs et suivez vos commandes d'achat, de la création à la réception.</p></article>
+      <article class="feature-card"><span class="feature-icon teal"><i class="bi bi-arrow-left-right" aria-hidden="true"></i></span><h3>Mouvements tracés</h3><p>Consultez l'historique des entrées et sorties pour mieux comprendre les variations de stock.</p></article>
+      <article class="feature-card"><span class="feature-icon amber"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span><h3>Valorisation du stock</h3><p>Visualisez la valeur estimée des produits à partir des quantités en stock et des prix renseignés.</p></article>
+    </div>
+  </section>
+
+  <section class="cta-section"><div><span class="eyebrow">PRÊT À EXPLORER ?</span><h2>Une meilleure visibilité commence ici.</h2><p>Créez votre espace StockFlow et découvrez une gestion de stock plus lisible.</p></div><a class="button button-light" routerLink="/register">Créer mon compte <i class="bi bi-arrow-right" aria-hidden="true"></i></a></section>
+  <footer class="site-footer"><a class="brand footer-brand" routerLink="/"><span class="brand-mark">S</span><span>StockFlow</span></a><span>Gestion des stocks et des approvisionnements</span><span>Projet portfolio</span></footer>
+</main>

@@ -1,0 +1,2 @@
+ALTER TABLE purchase_orders
+ADD COLUMN archived BOOLEAN NOT NULL DEFAULT FALSE;

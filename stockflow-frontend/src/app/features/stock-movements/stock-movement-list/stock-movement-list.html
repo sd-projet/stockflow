@@ -1,0 +1,318 @@
+
+<section class="page-container">
+  <div class="page-header">
+    <div>
+      <h1>Mouvements de stock</h1>
+      <p>Suivez les entrées, les sorties et les ajustements de stock.</p>
+    </div>
+
+    <button
+      type="button"
+      class="btn-primary"
+      (click)="openForm()"
+    >
+      + Nouveau mouvement
+    </button>
+  </div>
+
+  @if (successMessage) {
+    <div class="alert alert-success" role="status">
+      {{ successMessage }}
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div class="alert alert-error" role="alert">
+      {{ errorMessage }}
+    </div>
+  }
+
+  <section class="filters">
+    <div class="filter-field search-field">
+      <label for="movement-search">Rechercher</label>
+      <input
+        id="movement-search"
+        type="search"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="currentPage = 1"
+        placeholder="Produit, référence ou motif..."
+      />
+    </div>
+
+    <div class="filter-field">
+      <label for="movement-type-filter">Type de mouvement</label>
+      <select
+        id="movement-type-filter"
+        [(ngModel)]="selectedType"
+        (ngModelChange)="currentPage = 1"
+      >
+        <option value="">Tous les types</option>
+        @for (type of movementTypes; track type.value) {
+          <option [value]="type.value">{{ type.label }}</option>
+        }
+      </select>
+    </div>
+  </section>
+
+  @if (showForm) {
+    <div class="modal-backdrop" (click)="closeForm()">
+    <section class="movement-form-card movement-modal" role="dialog" aria-modal="true" aria-labelledby="movement-modal-title" (click)="$event.stopPropagation()">
+      <div class="form-header">
+        <div>
+          <h2 id="movement-modal-title">Nouveau mouvement</h2>
+          <p>Les quantités seront mises à jour après validation par le serveur.</p>
+        </div>
+
+        <button
+          type="button"
+          class="btn-close"
+          aria-label="Fermer le formulaire"
+          (click)="closeForm()"
+        >
+          ×
+        </button>
+      </div>
+
+      <form (ngSubmit)="submitMovement()" #movementForm="ngForm">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="productId">Produit *</label>
+            <select
+              id="productId"
+              name="productId"
+              [(ngModel)]="form.productId"
+              required
+            >
+              <option [ngValue]="0" disabled>Choisir un produit</option>
+              @for (product of products; track product.id) {
+                <option [ngValue]="product.id">
+                  {{ product.reference }} — {{ product.name }}
+                  (Stock : {{ product.quantityInStock }})
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="movementType">Type *</label>
+            <select
+              id="movementType"
+              name="type"
+              [(ngModel)]="form.type"
+              required
+            >
+              @for (type of movementTypes; track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="quantity">
+              @if (form.type === 'ADJUSTMENT') {
+                Quantité finale souhaitée *
+              } @else {
+                Quantité *
+              }
+            </label>
+            <input
+              id="quantity"
+              type="number"
+              name="quantity"
+              [(ngModel)]="form.quantity"
+              min="1"
+              step="1"
+              required
+            />
+            @if (form.type === 'ADJUSTMENT') {
+              <small>Cette valeur remplacera le stock actuel.</small>
+            }
+          </div>
+
+          <div class="form-field form-field-full">
+            <label for="reason">Motif *</label>
+            <textarea
+              id="reason"
+              name="reason"
+              [(ngModel)]="form.reason"
+              rows="3"
+              maxlength="500"
+              placeholder="Ex. : Réception fournisseur, vente, correction d'inventaire..."
+              required
+            ></textarea>
+            <small>{{ form.reason.length }}/500 caractères</small>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="closeForm()"
+            [disabled]="submitting"
+          >
+            Annuler
+          </button>
+
+          <button
+            type="submit"
+            class="btn-primary"
+            [disabled]="submitting || products.length === 0"
+          >
+            {{ submitting ? 'Enregistrement...' : 'Enregistrer le mouvement' }}
+          </button>
+        </div>
+      </form>
+    </section>
+    </div>
+  }
+
+  <section class="table-card">
+    <div class="table-header">
+      <div>
+        <h2>Historique</h2>
+        <p>{{ filteredMovements.length }} mouvement(s)</p>
+      </div>
+
+      <div class="table-header-actions">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="exportCsv()"
+          [disabled]="filteredMovements.length === 0"
+        >
+          <i class="bi bi-download" aria-hidden="true"></i>
+          Exporter CSV
+        </button>
+
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="loadMovements()"
+          [disabled]="loading"
+        >
+          Actualiser
+        </button>
+      </div>
+    </div>
+
+    @if (loading) {
+      <div class="empty-state">Chargement des mouvements...</div>
+    } @else if (filteredMovements.length === 0) {
+      <div class="empty-state">
+        <h3>Aucun mouvement trouvé</h3>
+        <p>Les mouvements enregistrés apparaîtront ici.</p>
+      </div>
+    } @else {
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Produit</th>
+              <th>Type</th>
+              <th>Avant</th>
+              <th>Après</th>
+              <th>Motif</th>
+              <th class="actions-heading">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (
+              movement of paginatedMovements;
+              track trackByMovementId($index, movement)
+            ) {
+              <tr>
+                <td class="date-cell">
+                  {{ movement.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                </td>
+
+                <td>
+                  <div class="product-name">{{ movement.productName }}</div>
+                  <div class="product-reference">
+                    {{ movement.productReference }}
+                  </div>
+                </td>
+
+                <td>
+                  <span
+                    class="movement-badge"
+                    [class.badge-in]="movement.type === 'IN'"
+                    [class.badge-out]="movement.type === 'OUT'"
+                    [class.badge-adjustment]="movement.type === 'ADJUSTMENT'"
+                  >
+                    {{ getMovementLabel(movement.type) }}
+                  </span>
+                </td>
+
+                <td>{{ movement.quantityBefore }}</td>
+                <td class="quantity-after">{{ movement.quantityAfter }}</td>
+                <td class="reason-cell">{{ movement.reason }}</td>
+                <td class="actions-cell">
+                  <button
+                    type="button"
+                    class="icon-action-button"
+                    title="Voir le détail du mouvement"
+                    [attr.aria-label]="'Voir le mouvement ' + movement.id"
+                    (click)="viewMovement(movement)"
+                  >
+                    <i class="bi bi-eye" aria-hidden="true"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pagination
+        [totalItems]="filteredMovements.length"
+        [currentPage]="currentPage"
+        class="stock-movement-pagination"
+        [pageSize]="pageSize"
+        (pageChange)="onPageChange($event)"
+      />
+    }
+  </section>
+
+  @if (selectedMovement; as movement) {
+    <div class="modal-backdrop" (click)="closeMovementDetails()">
+      <section
+        class="movement-form-card movement-modal movement-details-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="movement-details-title"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="form-header">
+          <div>
+            <h2 id="movement-details-title">Détail du mouvement</h2>
+            <p>Mouvement n° {{ movement.id }}</p>
+          </div>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Fermer le détail"
+            (click)="closeMovementDetails()"
+          >×</button>
+        </div>
+
+        <dl class="movement-details-grid">
+          <div><dt>Date et heure</dt><dd>{{ movement.createdAt | date:'dd/MM/yyyy à HH:mm' }}</dd></div>
+          <div><dt>Type</dt><dd><span class="movement-badge" [class.badge-in]="movement.type === 'IN'" [class.badge-out]="movement.type === 'OUT'" [class.badge-adjustment]="movement.type === 'ADJUSTMENT'">{{ getMovementLabel(movement.type) }}</span></dd></div>
+          <div><dt>Produit</dt><dd>{{ movement.productName }}</dd></div>
+          <div><dt>Référence produit</dt><dd>{{ movement.productReference }}</dd></div>
+          <div><dt>Quantité avant</dt><dd>{{ movement.quantityBefore }}</dd></div>
+          <div><dt>Quantité après</dt><dd>{{ movement.quantityAfter }}</dd></div>
+          <div><dt>Variation</dt><dd>{{ movement.quantityAfter - movement.quantityBefore }}</dd></div>
+          <div><dt>Utilisateur</dt><dd>{{ movement.performedBy }}</dd></div>
+          <div class="details-full-width"><dt>Motif</dt><dd>{{ movement.reason }}</dd></div>
+        </dl>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeMovementDetails()">Fermer</button>
+        </div>
+      </section>
+    </div>
+  }
+</section>

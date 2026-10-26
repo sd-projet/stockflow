@@ -1,0 +1,318 @@
+
+<div class="suppliers-page">
+  <div class="page-header">
+    <div>
+      <h1>Fournisseurs</h1>
+      <p>Gérez vos fournisseurs et leurs coordonnées.</p>
+    </div>
+
+    <button
+      type="button"
+      class="primary-button"
+      (click)="openForm()"
+    >
+      + Nouveau fournisseur
+    </button>
+  </div>
+
+  @if (errorMessage) {
+    <div class="alert alert-error">{{ errorMessage }}</div>
+  }
+
+  
+  <div class="supplier-filters">
+      <div class="search-field">
+          <label for="supplier-search">Rechercher un fournisseur</label>
+          <input
+              id="supplier-search"
+              type="search"
+              class="form-control"
+              placeholder="Nom, contact, e-mail, téléphone, ville..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="currentPage = 1"
+          />
+      </div>
+
+      <div class="status-field">
+          <label for="supplier-status">Statut</label>
+          <select
+              id="supplier-status"
+              class="form-select"
+              [(ngModel)]="statusFilter"
+              (ngModelChange)="currentPage = 1"
+          >
+              <option value="all">Tous les fournisseurs</option>
+              <option value="active">Actifs</option>
+              <option value="inactive">Désactivés</option>
+          </select>
+      </div>
+  </div>
+
+
+  <div class="suppliers-panel">
+    <div class="suppliers-toolbar">
+      <div>
+        <h2>Liste des fournisseurs</h2>
+        <p>{{ suppliers.length }} fournisseur(s) enregistré(s)</p>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Contact</th>
+            <th>Email</th>
+            <th>Téléphone</th>
+            <th>Ville</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @if (loading) {
+            <tr>
+              <td colspan="7" class="empty-state">
+                Chargement des fournisseurs...
+              </td>
+            </tr>
+          } @else if (suppliers.length === 0) {
+            <tr>
+              <td colspan="7" class="empty-state">
+                Aucun fournisseur n'est enregistré.
+              </td>
+            </tr>
+          } @else if (filteredSuppliers.length === 0) {
+            <tr>
+              <td colspan="7" class="empty-state">
+                Aucun fournisseur ne correspond à votre recherche ou aux filtres sélectionnés.
+              </td>
+            </tr>
+
+          } @else {
+            @for (supplier of paginatedSuppliers; track supplier.id) {
+              <tr
+                class="clickable-row"
+                (click)="openSupplierDetails(supplier)"
+                (keydown.enter)="openSupplierDetails(supplier)"
+                tabindex="0"
+                [attr.aria-label]="'Voir les détails du fournisseur ' + supplier.name"
+              >
+                <td class="supplier-name">{{ supplier.name }}</td>
+                <td>{{ supplier.contactName || '—' }}</td>
+                <td>{{ supplier.email || '—' }}</td>
+                <td>{{ supplier.phone || '—' }}</td>
+                <td>{{ supplier.city || '—' }}</td>
+                <td>
+                  <span
+                    class="status-badge"
+                    [class.inactive]="!supplier.active"
+                  >
+                    {{ supplier.active ? 'Actif' : 'Inactif' }}
+                  </span>
+                </td>              
+                <td class="actions-cell">
+                    <button
+                        type="button"
+                        class="icon-button"
+                        (click)="$event.stopPropagation(); openEditForm(supplier)"
+                        aria-label="Modifier le fournisseur"
+                        title="Modifier"
+                    >
+                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                    </button>
+
+                    @if (supplier.active) {
+                        <button
+                            type="button"
+                            class="icon-button danger-icon"
+                            (click)="deactivateSupplier(supplier)"
+                            [attr.aria-label]="'Désactiver le fournisseur ' + supplier.name"
+                            title="Désactiver"
+                        >
+                            <i class="bi bi-ban" aria-hidden="true"></i>
+                        </button>
+                    } @else {
+                        <button
+                            type="button"
+                            class="icon-button"
+                            (click)="reactivateSupplier(supplier)"
+                            [attr.aria-label]="'Réactiver le fournisseur ' + supplier.name"
+                            title="Réactiver"
+                        >
+                            <i class="bi bi-check-circle" aria-hidden="true"></i>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="icon-button danger-icon"
+                            (click)="deleteSupplierPermanently(supplier)"
+                            [attr.aria-label]="'Supprimer définitivement le fournisseur ' + supplier.name"
+                            title="Supprimer définitivement"
+                        >
+                            <i class="bi bi-trash3" aria-hidden="true"></i>
+                        </button>
+                    }
+                    
+                    <button
+                      type="button"
+                      class="icon-button"
+                      (click)="$event.stopPropagation(); openSupplierDetails(supplier)"
+                      [attr.aria-label]="'Voir la fiche du fournisseur ' + supplier.name"
+                      title="Voir les détails"
+                    >
+                      <i class="bi bi-eye" aria-hidden="true"></i>
+                    </button>
+
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (!loading && filteredSuppliers.length > 0) {
+      <app-pagination
+        class="supplier-pagination"
+        [totalItems]="filteredSuppliers.length"
+        [currentPage]="currentPage"
+        [pageSize]="pageSize"
+        (pageChange)="onPageChange($event)"
+      />
+    }
+  </div>
+</div>
+
+@if (showForm) {
+  <div class="modal-backdrop">
+    <div class="supplier-modal">
+      <div class="modal-header">
+        <div>
+            <h2>{{ editingSupplierId === null ? 'Nouveau fournisseur' : 'Modifier le fournisseur' }}</h2>
+            <p>Renseignez les coordonnées du fournisseur.</p>
+        </div>
+
+        <button
+          type="button"
+          class="close-button"
+          (click)="closeForm()"
+          [disabled]="saving"
+          aria-label="Fermer"
+        >
+          ×
+        </button>
+      </div>
+
+      <form (ngSubmit)="createSupplier()">
+        <div class="form-grid">
+          <label>
+            Nom du fournisseur *
+            <input
+              type="text"
+              name="name"
+              [(ngModel)]="formData.name"
+              maxlength="150"
+              required
+            />
+          </label>
+
+          <label>
+            Nom du contact
+            <input
+              type="text"
+              name="contactName"
+              [(ngModel)]="formData.contactName"
+              maxlength="100"
+            />
+          </label>
+
+          <label>
+            Adresse email
+            <input
+              type="email"
+              name="email"
+              [(ngModel)]="formData.email"
+              maxlength="255"
+            />
+          </label>
+
+          <label>
+            Téléphone
+            <input
+              type="tel"
+              name="phone"
+              [(ngModel)]="formData.phone"
+              maxlength="30"
+            />
+          </label>
+
+          <label class="full-width">
+            Adresse
+            <input
+              type="text"
+              name="address"
+              [(ngModel)]="formData.address"
+              maxlength="255"
+            />
+          </label>
+
+          <label>
+            Code postal
+            <input
+              type="text"
+              name="postalCode"
+              [(ngModel)]="formData.postalCode"
+              maxlength="20"
+            />
+          </label>
+
+          <label>
+            Ville
+            <input
+              type="text"
+              name="city"
+              [(ngModel)]="formData.city"
+              maxlength="100"
+            />
+          </label>
+
+          <label class="full-width">
+            Pays
+            <input
+              type="text"
+              name="country"
+              [(ngModel)]="formData.country"
+              maxlength="100"
+            />
+          </label>
+        </div>
+
+        @if (formError) {
+          <div class="alert alert-error">{{ formError }}</div>
+        }
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="closeForm()"
+            [disabled]="saving"
+          >
+            Annuler
+          </button>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="saving"
+          >
+            {{ saving ? 'Enregistrement...' : (editingSupplierId === null ? 'Créer le fournisseur' : 'Enregistrer les modifications') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

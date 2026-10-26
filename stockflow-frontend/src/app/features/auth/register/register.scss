@@ -1,0 +1,59 @@
+:host { display: block; min-height: 100vh; }
+.register-page { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 32px 20px; background: radial-gradient(circle at 10% 0%,#dbeafe 0,transparent 34%),radial-gradient(circle at 100% 100%,#e6edff 0,transparent 30%),#f4f7fc; }
+.register-card { width: 100%; max-width: 470px; padding: 34px 40px; border: 1px solid #e1e8f2; border-radius: 18px; background: #fff; box-shadow: 0 20px 55px #152c5212; }
+.back-home { display: inline-flex; align-items: center; gap: 8px; color: #64748b; text-decoration: none; font-size: 12px; font-weight: 600; }.back-home:hover { color: #245bd5; }
+.register-header { margin: 24px 0 27px; text-align: center; }.register-header .brand-mark { width: 49px; height: 49px; display: grid; place-items: center; margin: 0 auto 15px; border-radius: 14px; color: #fff; background: linear-gradient(140deg,#3675ed,#2455c8); box-shadow: 0 7px 18px #2455c82b; font-size: 25px; font-weight: 800; }.register-header h1 { margin: 0; color: #15233b; font-size: 25px; font-weight: 800; letter-spacing: -.6px; }.register-header p { max-width: 320px; margin: 10px auto 0; color: #718097; font-size: 13px; line-height: 1.6; }
+.form-field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 17px; }.form-field label { color: #34435b; font-size: 13px; font-weight: 700; }.form-field input { width: 100%; min-height: 45px; padding: 11px 13px; color: #17243b; border: 1px solid #d5deeb; border-radius: 8px; outline: none; background: #fff; font-size: 13px; transition: border-color .18s,box-shadow .18s; }.form-field input::placeholder { color: #a0aabd; }.form-field input:focus { border-color: #4a7de2; box-shadow: 0 0 0 3px #3972e21c; }.form-field small { color: #8b97aa; font-size: 11px; }
+.password-wrap { position: relative; }.password-wrap input { padding-right: 46px; }.password-toggle { position: absolute; top: 0; right: 3px; width: 40px; height: 45px; display: grid; place-items: center; color: #78869a; border: 0; background: transparent; font-size: 16px; }.password-toggle:hover { color: #245bd5; }
+.error-message { margin: 0 0 15px; padding: 11px 12px; color: #b42318; background: #fff1f0; border: 1px solid #ffd4d0; border-radius: 8px; font-size: 12px; line-height: 1.5; }
+.submit-button { width: 100%; min-height: 47px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 5px; color: #fff; background: #245bd5; border: 0; border-radius: 9px; font-size: 14px; font-weight: 700; transition: background .18s,box-shadow .18s; }.submit-button:hover:not(:disabled) { background: #194ab7; box-shadow: 0 8px 20px #245bd526; }.submit-button:disabled { cursor: not-allowed; opacity: .6; }
+.register-footer { margin: 23px 0 0; color: #718097; text-align: center; font-size: 12px; }.register-footer a { color: #245bd5; font-weight: 700; text-decoration: none; }.register-footer a:hover { text-decoration: underline; }.security-note { display: flex; align-items: flex-start; justify-content: center; gap: 7px; margin: 18px 0 0; color: #8a96a8; font-size: 10px; line-height: 1.6; text-align: center; }.security-note i { color: #23936a; font-size: 13px; }
+@media (max-width: 480px) { .register-card { padding: 27px 22px; }.register-header h1 { font-size: 23px; } }
+
+/* Navigation publique commune aux pages d'authentification */
+.register-page { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 0; }
+.auth-topbar { width: 100%; max-width: 1240px; min-height: 78px; margin: 0 auto; padding: 0 34px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid #e2e8f0; }
+.auth-brand { display: inline-flex; align-items: center; gap: 10px; color: #14213a; text-decoration: none; font-size: 20px; font-weight: 800; letter-spacing: -.5px; }
+.auth-brand-mark { display: grid; place-items: center; width: 38px; height: 38px; color: #fff; background: linear-gradient(140deg,#3675ed,#2455c8); border-radius: 11px; font-size: 20px; box-shadow: 0 6px 15px #2455c82b; }
+.auth-nav-actions { display: flex; align-items: center; gap: 23px; }
+.auth-nav-link { color: #45546d; text-decoration: none; font-size: 13px; font-weight: 650; }
+.auth-nav-link:hover { color: #245bd5; }
+.auth-nav-cta { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; color: #fff; background: #245bd5; border-radius: 9px; text-decoration: none; font-size: 13px; font-weight: 700; }
+.auth-nav-cta:hover { color: #fff; background: #194ab7; }
+.register-content { flex: 1; display: flex; align-items: center; justify-content: center; padding: 30px 20px; }
+.register-card { margin: auto; }
+@media (max-width: 600px) { .auth-topbar { min-height: 70px; padding: 0 18px; gap: 10px; }.auth-brand { gap: 7px; font-size: 17px; }.auth-brand-mark { width: 33px; height: 33px; font-size: 17px; }.auth-nav-actions { gap: 10px; }.auth-nav-link { font-size: 11px; }.auth-nav-cta { min-height: 35px; padding: 0 9px; font-size: 11px; }.register-content { padding: 22px 16px; } }
+@media (max-width: 390px) { .auth-topbar { align-items: flex-start; flex-direction: column; padding-top: 12px; padding-bottom: 12px; }.auth-nav-actions { width: 100%; justify-content: space-between; } }
+
+
+/* Barre de navigation alignée sur celle de la page d'accueil */
+.topbar { box-sizing: border-box; width: 100%; max-width: none; height: 86px; margin: 0; padding: 0 max(34px, calc((100% - 1172px) / 2)); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #edf1f7; background: #fff; }
+.brand { display: inline-flex; align-items: center; gap: 11px; color: #14213a; text-decoration: none; font-size: 21px; font-weight: 800; letter-spacing: -.6px; }
+.topbar .brand-mark { box-sizing: border-box; display: grid; place-items: center; flex: 0 0 39px; width: 39px; min-width: 39px; height: 39px; min-height: 39px; margin: 0; padding: 0; line-height: 1; color: #fff; background: linear-gradient(140deg,#3675ed,#2455c8); border-radius: 12px; font-size: 21px; font-weight: 800; box-shadow: 0 6px 15px #2455c82b; }
+.nav-actions { display: flex; align-items: center; gap: 27px; }
+.nav-login { color: #45546d; text-decoration: none; font-size: 14px; font-weight: 650; }
+.nav-login:hover { color: #245bd5; }
+.button { min-height: 48px; display: inline-flex; justify-content: center; align-items: center; gap: 11px; padding: 0 20px; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; transition: transform .18s, box-shadow .18s, background .18s; }
+.button:hover { transform: translateY(-1px); }
+.button-primary { color: #fff; background: #245bd5; box-shadow: 0 8px 20px #245bd526; }
+.button-primary:hover { color: #fff; background: #194ab7; box-shadow: 0 10px 24px #245bd53b; }
+.button-small { min-height: 42px; padding: 0 16px; }
+
+@media (max-width: 600px) {
+  .topbar { height: 72px; padding: 0 19px; }
+  .brand { font-size: 18px; }
+  .topbar .brand-mark { flex-basis: 34px; width: 34px; min-width: 34px; height: 34px; min-height: 34px; font-size: 18px; }
+  .nav-actions { gap: 13px; }
+  .nav-login { font-size: 12px; }
+  .button-small { min-height: 37px; padding: 0 11px; font-size: 12px; }
+}
+@media (max-width: 390px) {
+  .topbar { height: auto; min-height: 72px; padding-top: 12px; padding-bottom: 12px; gap: 10px; }
+  .brand { gap: 7px; font-size: 17px; }
+  .topbar .brand-mark { width: 34px; height: 34px; font-size: 18px; }
+  .nav-actions { gap: 10px; }
+  .nav-login { font-size: 11px; }
+  .button-small { min-height: 35px; padding: 0 9px; font-size: 11px; }
+}
+
+.topbar { background: #fff; }

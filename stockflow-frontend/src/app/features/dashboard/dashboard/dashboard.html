@@ -1,0 +1,135 @@
+<section class="dashboard">
+  <header class="page-header">
+    <div>
+      <h1>Tableau de bord</h1>
+      <p>Vue d'ensemble de votre activité et de vos stocks.</p>
+    </div>
+    <button
+      type="button"
+      class="refresh-button"
+      (click)="load()"
+      [disabled]="loading()"
+    >
+      <i class="bi bi-arrow-clockwise"></i>
+      {{ loading() ? 'Actualisation...' : 'Actualiser' }}
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (data(); as d) {
+    <section class="stats-grid">
+      <article class="stat-card clickable" role="link" tabindex="0" (click)="navigateTo('/products')" (keydown.enter)="navigateTo('/products')">
+        <span class="stat-label">Références produits</span>
+        <strong class="stat-value">{{ d.activeProducts | number }}</strong>
+        <span class="stat-detail">Produits actifs</span>
+      </article>
+
+      <article class="stat-card clickable" role="link" tabindex="0" (click)="navigateTo('/stock-valuation')" (keydown.enter)="navigateTo('/stock-valuation')">
+        <span class="stat-label">Valeur du stock</span>
+        <strong class="stat-value">
+          {{ d.stockValue | currency:'EUR':'symbol':'1.0-0' }}
+        </strong>
+        <span class="stat-detail">Quantité × prix unitaire · Voir le détail</span>
+      </article>
+
+      <article class="stat-card clickable" role="link" tabindex="0" (click)="navigateTo('/products', { lowStock: true })" (keydown.enter)="navigateTo('/products', { lowStock: true })" [class.warning-card]="d.lowStockCount > 0">
+        <span class="stat-label">Stocks faibles</span>
+        <strong class="stat-value">{{ d.lowStockCount }}</strong>
+        <span class="stat-detail">
+          {{ d.outOfStockCount }} en rupture · sous le seuil minimum
+        </span>
+      </article>
+
+      <article class="stat-card clickable" role="link" tabindex="0" (click)="navigateTo('/purchase-orders')" (keydown.enter)="navigateTo('/purchase-orders')">
+        <span class="stat-label">Commandes en cours</span>
+        <strong class="stat-value">{{ d.openOrders }}</strong>
+        <span class="stat-detail">
+          À réceptionner · {{ d.draftOrders }} brouillon(s)
+        </span>
+      </article>
+    </section>
+
+    <section class="dashboard-panels">
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Alertes de stock</h2>
+          <a routerLink="/products" class="panel-link">Voir les produits</a>
+        </div>
+
+        @if (d.lowStockProducts.length === 0) {
+          <p class="empty-state">Aucun produit sous le seuil minimum. 🎉</p>
+        }
+
+        @for (item of d.lowStockProducts; track item.id) {
+          <div class="alert-row clickable" (click)="openProduct(item.id)">
+            <div>
+              <strong>{{ item.name }}</strong>
+              <p>Réf. {{ item.reference }} · seuil {{ item.minimumStock }}</p>
+            </div>
+            <span class="quantity low">
+              {{ item.quantityInStock === 0 ? 'Rupture' : item.quantityInStock + ' ' + item.unit }}
+            </span>
+          </div>
+        }
+
+        @if (d.lowStockProducts.length > 0) {
+          <div class="panel-footer">
+            <a routerLink="/purchase-orders" class="panel-link">
+              <i class="bi bi-cart-plus"></i> Créer une commande de réapprovisionnement
+            </a>
+          </div>
+        }
+      </article>
+
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Derniers mouvements</h2>
+          <a routerLink="/stock-movements" class="panel-link">Tout voir</a>
+        </div>
+
+        @if (d.recentMovements.length === 0) {
+          <p class="empty-state">Aucun mouvement enregistré.</p>
+        }
+
+        @for (movement of d.recentMovements.slice(0, 5); track movement.id) {
+          <div class="movement-row clickable" role="link" tabindex="0" (click)="navigateTo('/stock-movements', { movementId: movement.id })" (keydown.enter)="navigateTo('/stock-movements', { movementId: movement.id })">
+            <div>
+              <strong>{{ movementLabel(movement.type) }}</strong>
+              <p>
+                {{ movement.productName }} ·
+                {{ movement.createdAt | date:'dd/MM/yyyy HH:mm' }}
+              </p>
+            </div>
+            <span
+              class="movement-type"
+              [class]="movementClass(movement.quantityBefore, movement.quantityAfter)"
+            >
+              {{ movementDelta(movement.quantityBefore, movement.quantityAfter) }}
+            </span>
+          </div>
+        }
+      </article>
+
+      <article class="panel panel-wide">
+        <div class="panel-header">
+          <h2>Commandes fournisseurs par statut</h2>
+          <a routerLink="/purchase-orders" class="panel-link">Gérer les commandes</a>
+        </div>
+
+        <div class="status-grid">
+          @for (status of orderStatuses; track status.key) {
+            <div class="status-tile">
+              <strong>{{ orderCount(status.key) }}</strong>
+              <span>{{ status.label }}</span>
+            </div>
+          }
+        </div>
+      </article>
+    </section>
+  } @else if (loading()) {
+    <p class="empty-state">Chargement...</p>
+  }
+</section>

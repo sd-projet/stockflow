@@ -1,0 +1,252 @@
+<section class="users-page">
+  <header class="page-header">
+    <div>
+      <h1>Utilisateurs</h1>
+      <p>Gérez les comptes et les rôles ayant accès à StockFlow.</p>
+    </div>
+
+    <button type="button" class="primary-button" (click)="openCreateForm()">
+      + Nouvel utilisateur
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert-error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert-success" role="status">{{ successMessage() }}</div>
+  }
+
+  <section class="users-panel">
+    <div class="user-filters">
+      <div class="search-field">
+        <label for="user-search">Rechercher</label>
+        <input
+          id="user-search"
+          type="search"
+          placeholder="Nom ou adresse e-mail..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event); onFilterChange()"
+        />
+      </div>
+
+      <div class="status-field">
+        <label for="user-role-filter">Rôle</label>
+        <select
+          id="user-role-filter"
+          [ngModel]="roleFilter()"
+          (ngModelChange)="roleFilter.set($event); onFilterChange()"
+        >
+          <option value="ALL">Tous les rôles</option>
+          @for (role of roles; track role.value) {
+            <option [value]="role.value">{{ role.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="status-field">
+        <label for="user-status-filter">Statut</label>
+        <select
+          id="user-status-filter"
+          [ngModel]="statusFilter()"
+          (ngModelChange)="statusFilter.set($event); onFilterChange()"
+        >
+          <option value="ALL">Tous</option>
+          <option value="ACTIVE">Actifs</option>
+          <option value="DISABLED">Désactivés</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>E-mail</th>
+            <th>Rôle</th>
+            <th>Statut</th>
+            <th>Créé le</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+            <tr><td colspan="6" class="empty-state">Chargement des utilisateurs...</td></tr>
+          } @else if (filteredUsers().length === 0) {
+            <tr><td colspan="6" class="empty-state">Aucun utilisateur à afficher.</td></tr>
+          } @else {
+            @for (user of paginatedUsers(); track user.id) {
+              <tr>
+                <td class="user-name">
+                  {{ user.fullName }}
+                  @if (isCurrentUser(user)) {
+                    <span class="you-tag">Vous</span>
+                  }
+                </td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <span class="role-badge" [class]="'role-badge ' + roleClass(user.role)">
+                    {{ roleLabel(user.role) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge" [class.inactive]="!user.enabled">
+                    {{ user.enabled ? 'Actif' : 'Désactivé' }}
+                  </span>
+                </td>
+                <td>{{ user.createdAt | date:'dd/MM/yyyy' }}</td>
+                <td class="actions-cell">
+                  <button
+                    type="button"
+                    class="icon-button"
+                    title="Modifier"
+                    aria-label="Modifier l'utilisateur"
+                    (click)="openEditForm(user)"
+                  >
+                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="icon-button"
+                    title="Changer le mot de passe"
+                    aria-label="Changer le mot de passe"
+                    (click)="openPasswordForm(user)"
+                  >
+                    <i class="bi bi-key" aria-hidden="true"></i>
+                  </button>
+
+                  @if (!isCurrentUser(user)) {
+                    <button
+                      type="button"
+                      class="icon-button"
+                      [class.danger-icon]="user.enabled"
+                      [title]="user.enabled ? 'Désactiver le compte' : 'Réactiver le compte'"
+                      [attr.aria-label]="user.enabled ? 'Désactiver le compte' : 'Réactiver le compte'"
+                      (click)="toggleEnabled(user)"
+                    >
+                      <i
+                        class="bi"
+                        [class.bi-person-slash]="user.enabled"
+                        [class.bi-person-check]="!user.enabled"
+                        aria-hidden="true"
+                      ></i>
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (!loading() && filteredUsers().length > 0) {
+      <app-pagination
+        [totalItems]="filteredUsers().length"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize"
+        (pageChange)="currentPage.set($event)"
+      />
+    }
+  </section>
+</section>
+
+@if (formMode) {
+  <div class="modal-backdrop">
+    <div class="user-modal" role="dialog" aria-modal="true" aria-labelledby="user-form-title">
+      <div class="modal-header">
+        <div>
+          <h2 id="user-form-title">{{ formTitle }}</h2>
+          @if (formMode === 'password') {
+            <p>{{ form.fullName }} · {{ form.email }}</p>
+          }
+        </div>
+
+        <button
+          type="button"
+          class="close-button"
+          (click)="closeForm()"
+          [disabled]="saving()"
+          aria-label="Fermer"
+        >
+          ×
+        </button>
+      </div>
+
+      @if (formError()) {
+        <div class="alert alert-error" role="alert">{{ formError() }}</div>
+      }
+
+      <form (ngSubmit)="submitForm()">
+        <div class="form-grid">
+          @if (formMode !== 'password') {
+            <label>
+              Nom complet *
+              <input
+                type="text"
+                name="fullName"
+                [(ngModel)]="form.fullName"
+                maxlength="150"
+                required
+              />
+            </label>
+
+            <label>
+              Adresse e-mail *
+              <input
+                type="email"
+                name="email"
+                [(ngModel)]="form.email"
+                maxlength="255"
+                required
+              />
+            </label>
+
+            <label>
+              Rôle *
+              <select name="role" [(ngModel)]="form.role" required>
+                @for (role of roles; track role.value) {
+                  <option [ngValue]="role.value">{{ role.label }}</option>
+                }
+              </select>
+            </label>
+          }
+
+          @if (formMode !== 'edit') {
+            <label [class.full-width]="formMode === 'password'">
+              {{ formMode === 'password' ? 'Nouveau mot de passe *' : 'Mot de passe *' }}
+              <input
+                type="password"
+                name="password"
+                [(ngModel)]="form.password"
+                minlength="12"
+                maxlength="128"
+                autocomplete="new-password"
+                required
+              />
+              <span class="hint">Entre 12 et 128 caractères.</span>
+            </label>
+          }
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="closeForm()"
+            [disabled]="saving()"
+          >
+            Annuler
+          </button>
+
+          <button type="submit" class="primary-button" [disabled]="saving()">
+            {{ saving() ? 'Enregistrement...' : 'Enregistrer' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

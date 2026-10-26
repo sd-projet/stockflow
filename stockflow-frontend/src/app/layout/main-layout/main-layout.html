@@ -1,0 +1,60 @@
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-icon">S</span>
+      <span>StockFlow</span>
+    </div>
+
+    <nav class="navigation">
+      <a routerLink="/dashboard" routerLinkActive="active">
+        Tableau de bord
+      </a>
+      <a routerLink="/products" routerLinkActive="active">
+        Produits
+      </a>
+      <a routerLink="/categories" routerLinkActive="active">
+        Catégories
+      </a>
+      <a routerLink="/suppliers" routerLinkActive="active">
+        Fournisseurs
+      </a>
+      <a routerLink="/stock-movements" routerLinkActive="active">
+        Mouvements de stock
+      </a>
+      <a routerLink="/purchase-orders" routerLinkActive="active">
+        Commandes fournisseurs
+      </a>
+      @if (isAdmin) {
+        <a routerLink="/users" routerLinkActive="active">
+          Utilisateurs
+        </a>
+      }
+    </nav>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <span>Gestion des stocks</span>
+      <div class="user-box">
+        <div class="user-info">
+          <strong>{{ user?.fullName ?? 'Utilisateur' }}</strong>
+          <span>{{ roleLabels[user?.role ?? ''] ?? user?.role }}</span>
+        </div>
+        <button
+          type="button"
+          class="logout-button"
+          title="Se déconnecter"
+          aria-label="Se déconnecter"
+          (click)="logout()"
+        >
+          <i class="bi bi-box-arrow-right"></i>
+          Déconnexion
+        </button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

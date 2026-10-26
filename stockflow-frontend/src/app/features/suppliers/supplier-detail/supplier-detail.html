@@ -1,0 +1,224 @@
+
+<div class="supplier-detail-page">
+
+  <div class="page-header">
+    <div>
+      <button type="button" class="back-button" (click)="goBack()">
+        ← Retour aux fournisseurs
+      </button>
+      <h1>Détails du fournisseur</h1>
+      <p>Informations générales et catalogue des produits associés.</p>
+    </div>
+  </div>
+
+  @if (loadingSupplier) {
+    <div class="state-message">
+      Chargement des informations du fournisseur...
+    </div>
+  } @else if (errorMessage) {
+    <div class="alert-error">
+      {{ errorMessage }}
+      <button type="button" class="secondary-button" (click)="goBack()">
+        Retour à la liste
+      </button>
+    </div>
+  } @else if (supplier) {
+
+    <section class="detail-card">
+      <div class="card-header">
+        <div>
+          <h2>{{ supplier.name }}</h2>
+          <p>Fiche fournisseur #{{ supplier.id }}</p>
+        </div>
+
+        <div class="supplier-actions">
+          <button type="button" class="primary-button" (click)="openEditForm()">Modifier</button>
+          <button type="button" [class.danger-button]="supplier.active" [class.primary-button]="!supplier.active" (click)="toggleSupplierStatus()">{{ supplier.active ? 'Désactiver' : 'Réactiver' }}</button>
+        </div>
+        <span
+          class="status-badge"
+          [class.inactive]="!supplier.active"
+        >
+          {{ supplier.active ? 'Actif' : 'Inactif' }}
+        </span>
+      </div>
+
+      <div class="information-grid">
+        <div class="information-item">
+          <span class="information-label">Nom du contact</span>
+          <span class="information-value">
+            {{ supplier.contactName || 'Non renseigné' }}
+          </span>
+        </div>
+
+        <div class="information-item">
+          <span class="information-label">Adresse e-mail</span>
+          <span class="information-value">
+            @if (supplier.email) {
+              <a [href]="'mailto:' + supplier.email">
+                {{ supplier.email }}
+              </a>
+            } @else {
+              Non renseignée
+            }
+          </span>
+        </div>
+
+        <div class="information-item">
+          <span class="information-label">Téléphone</span>
+          <span class="information-value">
+            @if (supplier.phone) {
+              <a [href]="'tel:' + supplier.phone">
+                {{ supplier.phone }}
+              </a>
+            } @else {
+              Non renseigné
+            }
+          </span>
+        </div>
+
+        <div class="information-item">
+          <span class="information-label">Adresse</span>
+          <span class="information-value">
+            {{ supplier.address || 'Non renseignée' }}
+          </span>
+        </div>
+
+        <div class="information-item">
+          <span class="information-label">Code postal</span>
+          <span class="information-value">
+            {{ supplier.postalCode || 'Non renseigné' }}
+          </span>
+        </div>
+
+        <div class="information-item">
+          <span class="information-label">Ville</span>
+          <span class="information-value">
+            {{ supplier.city || 'Non renseignée' }}
+          </span>
+        </div>
+
+        <div class="information-item">
+          <span class="information-label">Pays</span>
+          <span class="information-value">
+            {{ supplier.country || 'Non renseigné' }}
+          </span>
+        </div>
+
+        <div class="information-item">
+          <span class="information-label">Créé le</span>
+          <span class="information-value">
+            {{ supplier.createdAt | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+
+        <div class="information-item">
+          <span class="information-label">Dernière modification</span>
+          <span class="information-value">
+            {{ supplier.updatedAt | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="products-section">
+      <div class="section-header">
+        <div>
+          <h2>Produits associés</h2>
+          <p>Les produits fournis par {{ supplier.name }}.</p>
+        </div>
+
+        <span class="product-count">
+          {{ supplierProducts.length }}
+          {{ supplierProducts.length > 1 ? 'produits' : 'produit' }}
+        </span>
+      </div>
+
+      @if (loadingProducts) {
+        <div class="state-message">
+          Chargement des produits...
+        </div>
+      } @else if (productsErrorMessage) {
+        <div class="alert-error">{{ productsErrorMessage }}</div>
+      } @else if (supplierProducts.length === 0) {
+        <div class="empty-state">
+          <h3>Aucun produit associé</h3>
+          <p>
+            Aucun produit n'est actuellement associé à ce fournisseur.
+          </p>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Référence</th>
+                <th>Produit</th>
+                <th>Catégorie</th>
+                <th>Stock actuel</th>
+                <th>Réf. fournisseur</th>
+                <th>Prix fournisseur</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (product of supplierProducts; track product.id) {
+                <tr>
+                  <td class="product-reference">
+                    {{ product.reference }}
+                  </td>
+                  <td class="product-name">{{ product.name }}</td>
+                  <td>{{ product.categoryName }}</td>
+                  <td>{{ product.quantityInStock }} {{ product.unit }}</td>
+                  <td>
+                    {{
+                      product.suppliers.find(
+                        association => association.supplierId === supplier!.id
+                      )?.supplierReference || '—'
+                    }}
+                  </td>
+                  <td>
+                    {{
+                      product.suppliers.find(
+                        association => association.supplierId === supplier!.id
+                      )?.unitPrice ?? '—'
+                    }}
+                    @if (
+                      product.suppliers.some(
+                        association => association.supplierId === supplier!.id
+                      )
+                    ) {
+                      €
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>
+
+@if (showEditForm) {
+  <div class="modal-backdrop" (click)="showEditForm = false">
+    <section class="supplier-edit-modal" role="dialog" aria-modal="true" aria-labelledby="supplier-edit-title" (click)="$event.stopPropagation()">
+      <header class="modal-heading"><h2 id="supplier-edit-title">Modifier le fournisseur</h2><button type="button" class="close-button" aria-label="Fermer" (click)="showEditForm = false">×</button></header>
+      @if (formError) { <p class="alert-error">{{ formError }}</p> }
+      <form (ngSubmit)="saveSupplier()">
+        <div class="edit-form-grid">
+          <label>Nom du fournisseur *<input name="name" [(ngModel)]="editForm.name" required maxlength="150" /></label>
+          <label>Nom du contact<input name="contactName" [(ngModel)]="editForm.contactName" maxlength="150" /></label>
+          <label>E-mail<input name="email" type="email" [(ngModel)]="editForm.email" maxlength="255" /></label>
+          <label>Téléphone<input name="phone" [(ngModel)]="editForm.phone" maxlength="40" /></label>
+          <label>Adresse<input name="address" [(ngModel)]="editForm.address" maxlength="255" /></label>
+          <label>Code postal<input name="postalCode" [(ngModel)]="editForm.postalCode" maxlength="20" /></label>
+          <label>Ville<input name="city" [(ngModel)]="editForm.city" maxlength="100" /></label>
+          <label>Pays<input name="country" [(ngModel)]="editForm.country" maxlength="100" /></label>
+        </div>
+        <footer class="edit-form-actions"><button type="button" class="secondary-button" (click)="showEditForm = false" [disabled]="saving">Annuler</button><button type="submit" class="primary-button" [disabled]="saving">{{ saving ? 'Enregistrement…' : 'Enregistrer' }}</button></footer>
+      </form>
+    </section>
+  </div>
+}

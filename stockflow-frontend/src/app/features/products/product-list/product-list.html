@@ -1,0 +1,672 @@
+<section class="products-page">
+  <header class="page-header">
+    <div>
+      <h1>Produits</h1>
+      <p>Gérez vos références, vos prix et vos niveaux de stock.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="secondary-button"
+        (click)="exportCsv()"
+        [disabled]="filteredProducts.length === 0"
+      >
+        <i class="bi bi-download" aria-hidden="true"></i>
+        Exporter CSV
+      </button>
+
+      <button
+        type="button"
+        class="primary-button"
+        (click)="openForm()"
+      >
+        + Nouveau produit
+      </button>
+    </div>
+  </header>
+
+  <section class="products-summary">
+    <article class="summary-card">
+      <span class="summary-label">Total des produits</span>
+      <strong class="summary-value">{{ totalProducts }}</strong>
+    </article>
+
+    <article class="summary-card">
+      <span class="summary-label">Produits actifs</span>
+      <strong class="summary-value">{{ activeProducts }}</strong>
+    </article>
+
+    <article class="summary-card">
+      <span class="summary-label">Stocks faibles</span>
+      <strong class="summary-value">{{ lowStockProducts }}</strong>
+    </article>
+  </section>
+
+  <section class="products-panel">
+    <div class="products-toolbar">
+      <div>
+        <h2>Liste des produits</h2>
+        <p>Retrouvez et gérez les produits de votre entreprise.</p>
+      </div>
+
+     <input
+        type="search"
+        name="searchProduct"
+        placeholder="Rechercher par référence, nom ou catégorie..."
+        aria-label="Rechercher un produit par référence, nom ou catégorie"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="currentPage = 1"
+      />
+    </div>
+    @if (errorMessage) {
+      <p class="form-error" role="alert">{{ errorMessage }}</p>
+    }
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Référence</th>
+            <th>Nom du produit</th>
+            <th>Catégorie</th>
+            <th>Prix unitaire</th>
+            <th>Stock actuel</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading) {
+            <tr>
+              <td colspan="7" class="empty-state">
+                Chargement des produits...
+              </td>
+            </tr>
+          } @else if (filteredProducts.length === 0) {
+            <tr>
+              <td colspan="7" class="empty-state">
+                {{
+                  searchTerm.trim()
+                    ? 'Aucun produit ne correspond à votre recherche.'
+                    : 'Aucun produit à afficher.'
+                }}
+              </td>
+            </tr>
+          } @else {
+            @for (product of paginatedProducts; track product.id) {
+              <tr>
+                <td>{{ product.reference }}</td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.categoryName }}</td>
+                <td>{{ product.unitPrice | number:'1.2-2' }} €</td>
+                <td>
+                  {{ product.quantityInStock }} {{ product.unit }}
+                  @if (isLowStock(product)) {
+                    <span class="low-stock-tag" title="Sous le seuil minimum">
+                      <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                      Faible
+                    </span>
+                  }
+                </td>
+                <td>
+                  <span
+                    class="status-badge"
+                    [class.inactive]="!product.active"
+                  >
+                    {{ product.active ? 'Actif' : 'Inactif' }}
+                  </span>
+                </td>
+                <td class="actions-cell">
+                  <button
+                    type="button"
+                    class="icon-button"
+                    title="Voir le produit"
+                    aria-label="Voir le produit"
+                    (click)="goToProductDetail(product.id)"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+
+                  @if (product.active) {
+                    <button
+                      type="button"
+                      class="icon-button"
+                      title="Modifier le produit"
+                      aria-label="Modifier le produit"
+                      (click)="editProduct(product)"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="icon-button danger"
+                      title="Désactiver le produit"
+                      aria-label="Désactiver le produit"
+                      (click)="deactivateProduct(product)"
+                    >
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="icon-button"
+                      title="Réactiver le produit"
+                      aria-label="Réactiver le produit"
+                      (click)="reactivateProduct(product)"
+                    >
+                      <i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (!loading && filteredProducts.length > 0) {
+      <app-pagination
+        [totalItems]="filteredProducts.length"
+        class="product-pagination"
+        [currentPage]="currentPage"
+        [pageSize]="pageSize"
+        (pageChange)="onPageChange($event)"
+      />
+    }
+  </section>
+</section>
+
+@if (showForm) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <section
+      class="product-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="product-form-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="modal-header">
+        <div>
+          <h2 id="product-form-title">
+            {{ isEditMode ? 'Modifier le produit' : 'Nouveau produit' }}
+          </h2>
+          <p>
+            {{
+              isEditMode
+                ? 'Modifiez les informations du produit.'
+                : 'Renseignez les informations du produit.'
+            }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="close-button"
+          aria-label="Fermer"
+          (click)="closeForm()"
+        >
+          &times;
+        </button>
+      </header>
+
+      <form
+        #productForm="ngForm"
+        (ngSubmit)="createProduct(formData)"
+      >
+
+            <section class="supplier-associations">
+              <div class="supplier-section-header">
+                <div>
+                  <h3>Fournisseur principal *</h3>
+                  <p>
+                    Sélectionnez le fournisseur auprès duquel vous achetez ce produit.
+                  </p>
+                </div>
+              </div>
+
+              @if (suppliers.length === 0) {
+                <p class="form-error" role="alert">
+                  Aucun fournisseur actif disponible. Créez ou réactivez un fournisseur
+                  avant d'enregistrer ce produit.
+                </p>
+              } @else if (formData.suppliers.length > 0) {
+                <div class="supplier-association-row">
+                  <label>
+                    Fournisseur *
+                    <select
+                      name="supplierId"
+                      [(ngModel)]="formData.suppliers[0].supplierId"
+                      required
+                    >
+                      @for (supplier of suppliers; track supplier.id) {
+                        <option [ngValue]="supplier.id">
+                          {{ supplier.name }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+
+                  <label>
+                    Référence fournisseur
+                    <input
+                      type="text"
+                      name="supplierReference"
+                      [(ngModel)]="formData.suppliers[0].supplierReference"
+                      maxlength="100"
+                      placeholder="Facultatif"
+                    />
+                  </label>
+
+                  <label>
+                    Prix d'achat (€) *
+                    <input
+                      type="number"
+                      name="supplierPrice"
+                      [(ngModel)]="formData.suppliers[0].unitPrice"
+                      min="0"
+                      step="0.01"
+                      required
+                    />
+                  </label>
+                </div>
+              }
+            </section>
+
+        <div class="form-grid">
+          <label>
+            Référence *
+            <input
+              type="text"
+              name="reference"
+              [(ngModel)]="formData.reference"
+              maxlength="50"
+              required
+            />
+          </label>
+
+          <label>
+            Nom du produit *
+            <input
+              type="text"
+              name="name"
+              [(ngModel)]="formData.name"
+              maxlength="150"
+              required
+            />
+          </label>
+
+          <label>
+            Catégorie *
+            <select
+              name="categoryId"
+              [(ngModel)]="formData.categoryId"
+              required
+            >
+              <option [ngValue]="0" disabled>
+                Sélectionner une catégorie
+              </option>
+              @for (category of categories; track category.id) {
+                <option [ngValue]="category.id">
+                  {{ category.name }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <label>
+            Seuil de stock minimum *
+            <input
+              type="number"
+              name="minimumStock"
+              [(ngModel)]="formData.minimumStock"
+              min="0"
+              step="1"
+              required
+            />
+          </label>
+
+          <label>
+            Unité *
+            <select
+              name="unit"
+              [(ngModel)]="formData.unit"
+              required
+            >
+              <option value="unité">Unité</option>
+              <option value="boîte">Boîte</option>
+              <option value="paquet">Paquet</option>
+              <option value="kg">Kilogramme (kg)</option>
+              <option value="g">Gramme (g)</option>
+              <option value="L">Litre (L)</option>
+              <option value="m">Mètre (m)</option>
+            </select>
+          </label>
+
+          <label>
+            Prix unitaire (€) *
+            <input
+              type="number"
+              name="unitPrice"
+              [(ngModel)]="formData.unitPrice"
+              min="0"
+              step="0.01"
+              required
+            />
+          </label>
+
+          <label class="description-field">
+            Description
+            <textarea
+              name="description"
+              [(ngModel)]="formData.description"
+              maxlength="1000"
+              rows="3"
+            ></textarea>
+          </label>
+        </div>
+
+        @if (formError) {
+          <p class="form-error" role="alert">{{ formError }}</p>
+        }
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="saving"
+            (click)="closeForm()"
+          >
+            Annuler
+          </button>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="productForm.invalid || !canSave || saving"
+          >
+            {{
+              saving
+                ? 'Enregistrement...'
+                : isEditMode
+                  ? 'Enregistrer les modifications'
+                  : 'Créer le produit'
+            }}
+          </button>
+        </div>
+      </form>
+
+    </section>
+  </div>
+}
+
+
+@if (selectedProduct || loadingDetails || detailsError) {
+  <div class="modal-backdrop" (click)="closeDetails()">
+    <section
+      class="product-modal product-details-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="product-details-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="modal-header">
+        <div>
+          <h2 id="product-details-title">Détails du produit</h2>
+          <p>Informations et fournisseurs associés.</p>
+        </div>
+
+        <button
+          type="button"
+          class="close-button"
+          aria-label="Fermer"
+          (click)="closeDetails()"
+        >
+          &times;
+        </button>
+      </header>
+
+      @if (loadingDetails) {
+        <p>Chargement des détails...</p>
+      } @else if (detailsError) {
+        <p class="form-error" role="alert">{{ detailsError }}</p>
+      } @else if (selectedProduct; as product) {
+        <div class="product-details-grid">
+          <div>
+            <span>Référence</span>
+            <strong>{{ product.reference }}</strong>
+          </div>
+
+          <div>
+            <span>Nom</span>
+            <strong>{{ product.name }}</strong>
+          </div>
+
+          <div>
+            <span>Catégorie</span>
+            <strong>{{ product.categoryName }}</strong>
+          </div>
+
+          <div>
+            <span>Prix unitaire général</span>
+            <strong>{{ product.unitPrice | number:'1.2-2' }} €</strong>
+          </div>
+
+          <div>
+            <span>Stock actuel</span>
+            <strong>{{ product.quantityInStock }} {{ product.unit }}</strong>
+          </div>
+
+          <div>
+            <span>Seuil minimum</span>
+            <strong>{{ product.minimumStock }} {{ product.unit }}</strong>
+          </div>
+
+          <div>
+            <span>Statut</span>
+            <strong>{{ product.active ? 'Actif' : 'Inactif' }}</strong>
+          </div>
+
+          <div class="details-description">
+            <span>Description</span>
+            <p>{{ product.description || 'Aucune description.' }}</p>
+          </div>
+        </div>
+        
+        <section class="details-suppliers">
+          <h3>Fournisseurs associés</h3>
+
+          @if (supplierActionError) {
+            <p class="form-error" role="alert">{{ supplierActionError }}</p>
+          }
+
+          @if (supplierActionSuccess) {
+            <p class="form-success" role="status">{{ supplierActionSuccess }}</p>
+          }
+
+          @if (product.suppliers.length === 0) {
+            <p>Aucun fournisseur associé à ce produit.</p>
+          } @else {
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fournisseur</th>
+                    <th>Référence fournisseur</th>
+                    <th>Prix d’achat</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (supplier of product.suppliers; track supplier.supplierId) {
+                    <tr>
+                      @if (editingSupplierId === supplier.supplierId) {
+                        <td>{{ supplier.supplierName }}</td>
+
+                        <td>
+                          <input
+                            type="text"
+                            [(ngModel)]="editSupplierData.supplierReference"
+                            [name]="'editReference' + supplier.supplierId"
+                            placeholder="Référence facultative"
+                            [disabled]="savingSupplier"
+                          />
+                        </td>
+
+                        <td>
+                          <input
+                            type="number"
+                            [(ngModel)]="editSupplierData.unitPrice"
+                            [name]="'editPrice' + supplier.supplierId"
+                            min="0"
+                            step="0.01"
+                            required
+                            [disabled]="savingSupplier"
+                          />
+                        </td>
+
+                        <td>
+                          <div class="supplier-actions">
+                            <button
+                              type="button"
+                              class="primary-button"
+                              (click)="saveSupplierEdit()"
+                              [disabled]="savingSupplier"
+                            >
+                              Enregistrer
+                            </button>
+
+                            <button
+                              type="button"
+                              class="secondary-button"
+                              (click)="cancelSupplierEdit()"
+                              [disabled]="savingSupplier"
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        </td>
+                      } @else {
+                        <td>{{ supplier.supplierName }}</td>
+                        <td>{{ supplier.supplierReference || '—' }}</td>
+                        <td>{{ supplier.unitPrice | number:'1.2-2' }} €</td>
+
+                        <td>
+                          <div class="supplier-actions">
+                            <button
+                              type="button"
+                              class="secondary-button"
+                              (click)="startSupplierEdit(supplier.supplierId)"
+                              [disabled]="savingSupplier"
+                            >
+                              Modifier
+                            </button>
+
+                            <button
+                              type="button"
+                              class="danger-button"
+                              (click)="removeSupplierFromProduct(supplier.supplierId)"
+                              [disabled]="savingSupplier || product.suppliers.length <= 1"
+                              [title]="product.suppliers.length <= 1
+                                ? 'Le produit doit conserver au moins un fournisseur'
+                                : 'Retirer ce fournisseur'"
+                            >
+                              Retirer
+                            </button>
+                          </div>
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <div class="add-supplier-form">
+            <h4>Ajouter un fournisseur</h4>
+
+            @if (availableSuppliersForSelectedProduct.length === 0) {
+              <p>Tous les fournisseurs actifs sont déjà associés à ce produit.</p>
+            } @else {
+              <div class="supplier-form-grid">
+                <div class="form-group">
+                  <label for="newSupplierId">Fournisseur</label>
+                  <select
+                    id="newSupplierId"
+                    name="newSupplierId"
+                    [(ngModel)]="newSupplierData.supplierId"
+                    [disabled]="savingSupplier"
+                  >
+                    <option [ngValue]="0">Sélectionner un fournisseur</option>
+                    @for (supplier of availableSuppliersForSelectedProduct; track supplier.id) {
+                      <option [ngValue]="supplier.id">{{ supplier.name }}</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="newSupplierReference">Référence fournisseur</label>
+                  <input
+                    id="newSupplierReference"
+                    type="text"
+                    name="newSupplierReference"
+                    [(ngModel)]="newSupplierData.supplierReference"
+                    placeholder="Facultatif"
+                    [disabled]="savingSupplier"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="newSupplierPrice">Prix d’achat (€)</label>
+                  <input
+                    id="newSupplierPrice"
+                    type="number"
+                    name="newSupplierPrice"
+                    [(ngModel)]="newSupplierData.unitPrice"
+                    min="0"
+                    step="0.01"
+                    required
+                    [disabled]="savingSupplier"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="primary-button"
+                (click)="addSupplierToProduct()"
+                [disabled]="savingSupplier"
+              >
+                {{ savingSupplier ? 'Enregistrement...' : 'Ajouter le fournisseur' }}
+              </button>
+            }
+          </div>
+        </section>
+
+      }
+
+      <div class="form-actions">
+        @if (selectedProduct?.active) {
+          <button
+            type="button"
+            class="primary-button"
+            (click)="editProduct(selectedProduct!); closeDetails()"
+          >
+            Modifier le produit
+          </button>
+        }
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="closeDetails()"
+        >
+          Fermer
+        </button>
+      </div>
+    </section>
+  </div>
+}

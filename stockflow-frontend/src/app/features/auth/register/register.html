@@ -1,0 +1,61 @@
+<main class="register-page">
+  <nav class="topbar" aria-label="Navigation principale">
+    <a class="brand" routerLink="/" aria-label="StockFlow, accueil">
+      <span class="brand-mark">S</span>
+      <span>StockFlow</span>
+    </a>
+    <div class="nav-actions">
+      <a class="nav-login" routerLink="/">Accueil</a>
+      <a class="nav-login" routerLink="/login">Se connecter</a>
+      <a class="button button-primary button-small" routerLink="/register">Créer un compte <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+    </div>
+  </nav>
+
+  <div class="register-content">
+  <section class="register-card">
+    <header class="register-header">
+      <div class="brand-mark">S</div>
+      <h1>Créer votre compte</h1>
+      <p>Rejoignez StockFlow et centralisez la gestion de vos stocks.</p>
+    </header>
+
+    <form #registerForm="ngForm" (ngSubmit)="submit()" novalidate>
+      <div class="form-field">
+        <label for="fullName">Nom complet</label>
+        <input id="fullName" type="text" name="fullName" [(ngModel)]="credentials.fullName" placeholder="Ex. Camille Martin" autocomplete="name" maxlength="150" required />
+      </div>
+
+      <div class="form-field">
+        <label for="email">Adresse e-mail</label>
+        <input id="email" type="email" name="email" [(ngModel)]="credentials.email" placeholder="vous@entreprise.fr" autocomplete="email" maxlength="255" required email />
+      </div>
+
+      <div class="form-field">
+        <label for="password">Mot de passe</label>
+        <div class="password-wrap">
+          <input id="password" [type]="passwordVisible ? 'text' : 'password'" name="password" [(ngModel)]="credentials.password" placeholder="12 caractères minimum" autocomplete="new-password" minlength="12" maxlength="128" required />
+          <button type="button" class="password-toggle" (click)="passwordVisible = !passwordVisible" [attr.aria-label]="passwordVisible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"><i [class]="passwordVisible ? 'bi bi-eye-slash' : 'bi bi-eye'" aria-hidden="true"></i></button>
+        </div>
+        <small>Utilisez au moins 12 caractères.</small>
+      </div>
+
+      <div class="form-field">
+        <label for="confirmPassword">Confirmer le mot de passe</label>
+        <input id="confirmPassword" [type]="passwordVisible ? 'text' : 'password'" name="confirmPassword" [(ngModel)]="credentials.confirmPassword" placeholder="Saisissez à nouveau le mot de passe" autocomplete="new-password" required />
+      </div>
+
+      @if (errorMessage) {
+        <p class="error-message" role="alert">{{ errorMessage }}</p>
+      }
+
+      <button class="submit-button" type="submit" [disabled]="registerForm.invalid || loading">
+        {{ loading ? 'Création du compte...' : 'Créer mon compte' }}
+        @if (!loading) { <i class="bi bi-arrow-right" aria-hidden="true"></i> }
+      </button>
+    </form>
+
+    <p class="register-footer">Vous avez déjà un compte ? <a routerLink="/login">Se connecter</a></p>
+    <p class="security-note"><i class="bi bi-shield-lock" aria-hidden="true"></i> Votre mot de passe est protégé et votre compte reçoit un rôle standard.</p>
+  </section>
+  </div>
+</main>

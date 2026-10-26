@@ -1,0 +1,713 @@
+
+<section class="page">
+  @if (!selectedOrder && !loadingDetails) {
+  <header class="page-header">
+    <div>
+      <h1>Commandes fournisseurs</h1>
+      <p>Créez et suivez les commandes adressées à vos fournisseurs.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="exportCsv()"
+        [disabled]="filteredOrders.length === 0"
+      >
+        <i class="bi bi-download" aria-hidden="true"></i>
+        Exporter CSV
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="openCreateForm()"
+        [disabled]="suppliers.length === 0 || products.length === 0"
+      >
+        + Nouvelle commande
+      </button>
+    </div>
+  </header>
+
+  @if (errorMessage) {
+    <div class="alert alert-error" role="alert">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="alert alert-success" role="status">
+      {{ successMessage }}
+    </div>
+  }
+
+  @if (showForm) {
+  <div class="modal-backdrop" (click)="closeCreateForm()">
+    <section
+      class="modal-dialog modal-large"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-order-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="panel-header">
+        <h2 id="create-order-title">
+          {{ editingOrderId === null ? 'Créer une commande' : 'Modifier la commande' }}
+        </h2>
+        <button
+          type="button"
+          class="modal-close-button"
+          aria-label="Fermer la fenêtre"
+          (click)="closeCreateForm()"
+        >
+          ×
+        </button>
+      </div>
+
+      <form (ngSubmit)="createOrder()">
+        <div class="form-grid">
+          
+          <label>
+            <span>
+              Fournisseur <span class="required">*</span>
+            </span>
+
+            <select
+              name="supplierId"
+              [(ngModel)]="newOrder.supplierId"
+              (ngModelChange)="onSupplierSelected()"
+              required
+            >
+              <option [ngValue]="null">Sélectionner un fournisseur</option>
+              @for (supplier of suppliers; track supplier.id) {
+                <option [ngValue]="supplier.id">{{ supplier.name }}</option>
+              }
+            </select>
+          </label>
+
+
+          <label>
+            Numéro de commande
+            <input
+              type="text"
+              name="orderNumber"
+              [(ngModel)]="newOrder.orderNumber"
+              maxlength="50"
+              placeholder="Généré automatiquement si vide"
+            />
+          </label>
+
+          <label>
+            Date de commande
+            <input
+              type="date"
+              name="orderDate"
+              [(ngModel)]="newOrder.orderDate"
+            />
+          </label>
+
+          <label>
+            Livraison prévue
+            <input
+              type="date"
+              name="expectedDeliveryDate"
+              [(ngModel)]="newOrder.expectedDeliveryDate"
+            />
+          </label>
+        </div>
+
+        <div class="lines-header">
+          <h3>Produits commandés</h3>
+          <button type="button" class="btn btn-secondary" (click)="addLine()">
+            + Ajouter un produit
+          </button>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Produit</th>
+                <th>Quantité</th>
+                <th>Prix unitaire (€)</th>
+                <th>Total (€)</th>
+                <th></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (line of newOrder.lines; track $index; let i = $index) {
+                <tr>
+                  <td>
+                    <select
+                      [name]="'product-' + i"
+                      [(ngModel)]="line.productId"
+                      (ngModelChange)="onProductSelected(line)"
+                      required
+                    >
+                      <option [ngValue]="null">Sélectionner un produit</option>
+
+                      @for (product of productsForSelectedSupplier; track product.id) {
+                        <option [ngValue]="product.id">
+                          {{ product.reference }} — {{ product.name }}
+                        </option>
+                      }
+                    </select>
+                  </td>
+
+                  <td>
+                    <input
+                      type="number"
+                      [name]="'quantity-' + i"
+                      [(ngModel)]="line.quantityOrdered"
+                      min="1"
+                      step="1"
+                      required
+                    />
+                  </td>
+
+                  <td>
+                    <input
+                      type="number"
+                      [name]="'price-' + i"
+                      [(ngModel)]="line.unitPrice"
+                      min="0"
+                      step="0.01"
+                      required
+                    />
+                  </td>
+
+                  <td class="numeric">
+                    {{ getLineTotal(line) | number:'1.2-2' }}
+                  </td>
+
+                  <td>
+                    <button
+                      type="button"
+                      class="btn-remove"
+                      (click)="removeLine(i)"
+                      [disabled]="newOrder.lines.length === 1"
+                      aria-label="Supprimer cette ligne"
+                      title="Supprimer la ligne"
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="order-total">
+          <span>Total estimé</span>
+          <strong>{{ getFormTotal() | number:'1.2-2' }} €</strong>
+        </div>
+
+        <label class="notes-field">
+          Notes
+          <textarea
+            name="notes"
+            [(ngModel)]="newOrder.notes"
+            rows="3"
+            maxlength="5000"
+            placeholder="Informations complémentaires..."
+          ></textarea>
+        </label>
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="closeCreateForm()"
+            [disabled]="saving"
+          >
+            Annuler
+          </button>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="saving || suppliers.length === 0 || products.length === 0"
+          >
+            {{
+              saving
+                ? 'Enregistrement...'
+                : editingOrderId === null
+                  ? 'Créer la commande'
+                  : 'Enregistrer les modifications'
+            }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+  }
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Historique des commandes</h2>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="loadOrders()"
+        [disabled]="loading"
+      >
+        Actualiser
+      </button>
+    </div>
+    
+    <div class="order-filters">
+      <div class="filter-group">
+        <label for="orderSearch">Rechercher une commande</label>
+        <input
+          id="orderSearch"
+          type="search"
+          class="form-control"
+          placeholder="N° de commande ou fournisseur..."
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="currentPage = 1"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label for="orderStatus">Filtrer par statut</label>
+        <select
+          id="orderStatus"
+          class="form-select"
+          [(ngModel)]="statusFilter"
+          (ngModelChange)="currentPage = 1"
+        >
+          <option value="ALL">Tous les statuts</option>
+          <option value="DRAFT">Brouillon</option>
+          <option value="ORDERED">Commandée</option>
+          <option value="PARTIALLY_RECEIVED">Partiellement reçue</option>
+          <option value="RECEIVED">Reçue</option>
+          <option value="CANCELLED">Annulée</option>
+        </select>
+      </div>
+
+      <label class="archived-toggle">
+        <input type="checkbox" [(ngModel)]="showArchived" (change)="currentPage = 1" />
+        <span>Afficher les archives</span>
+      </label>
+    </div>
+
+    @if (loading) {
+      <p class="empty-state">Chargement des commandes...</p>
+    } @else if (orders.length === 0) {
+      <p class="empty-state">Aucune commande fournisseur pour le moment.</p>
+    } @else {
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>N° de commande</th>
+              <th>Fournisseur</th>
+              <th>Date</th>
+              <th>Livraison prévue</th>
+              <th>Montant</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (order of paginatedOrders; track order.id) {
+              <tr>
+                <td class="order-number">{{ order.orderNumber }}</td>
+                <td>{{ order.supplierName }}</td>
+                <td>{{ order.orderDate ? (order.orderDate | date:'dd/MM/yyyy') : '—' }}</td>
+                <td>
+                  {{ order.expectedDeliveryDate
+                    ? (order.expectedDeliveryDate | date:'dd/MM/yyyy')
+                    : '—' }}
+                </td>
+                <td class="numeric">
+                  {{ order.totalAmount | number:'1.2-2' }} €
+                </td>
+                <td>
+                  <span class="status" [ngClass]="statusClass(order.status)">
+                    {{ statusLabel(order.status) }}
+                  </span>
+                </td>
+                <td class="order-actions">
+                  <button type="button" class="icon-action" title="Voir le détail" aria-label="Voir le détail" (click)="viewOrderDetails(order.id)">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                  @if (!order.archived) {
+                    <button type="button" class="icon-action archive-action" title="Archiver la commande" aria-label="Archiver la commande" [disabled]="archivingOrderId === order.id" (click)="archiveOrder(order)">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v4H3zM5 8v12h14V8M9 12h6"/></svg>
+                    </button>
+                  } @else {
+                    <span class="archived-label">Archivée</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-pagination
+          [totalItems]="filteredOrders.length"
+          [currentPage]="currentPage"
+          [pageSize]="pageSize"
+          (pageChange)="onPageChange($event)"
+        />
+    }
+  </section>
+
+
+  }
+
+  @if (loadingDetails) {
+    <section class="order-detail-page" role="status" aria-live="polite">
+      <p class="empty-state">Chargement du détail de la commande...</p>
+    </section>
+  }
+
+  @if (selectedOrder; as order) {
+      <section class="order-detail-page" aria-labelledby="order-details-title">
+      <button type="button" class="back-button" (click)="closeOrderDetails()">
+        ← Retour aux commandes
+      </button>
+
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">GESTION DES APPROVISIONNEMENTS</span>
+          <h1 id="order-details-title">Commande {{ order.orderNumber }}</h1>
+          <p>{{ order.supplierName }}</p>
+        </div>
+        <span class="order-id">Commande n° {{ order.id }}</span>
+      </header>
+
+      <section class="summary-grid" aria-label="Résumé de la commande">
+        <article class="summary-card">
+          <span class="summary-label">Statut</span>
+          <strong><span class="status" [ngClass]="statusClass(order.status)">{{ statusLabel(order.status) }}</span></strong>
+          <span class="summary-caption">État actuel de la commande</span>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">Date de commande</span>
+          <strong>{{ order.orderDate ? (order.orderDate | date:'dd/MM/yyyy') : '—' }}</strong>
+          <span class="summary-caption">Date de création de la commande</span>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">Livraison prévue</span>
+          <strong>{{ order.expectedDeliveryDate ? (order.expectedDeliveryDate | date:'dd/MM/yyyy') : '—' }}</strong>
+          <span class="summary-caption">Date prévue de réception</span>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">Date de réception</span>
+          <strong>
+            {{ order.receivedDate
+              ? (order.receivedDate | date:'dd/MM/yyyy')
+              : '—' }}
+          </strong>
+          <span class="summary-caption">
+            Date de réception complète de la commande
+          </span>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">Créée par</span>
+          <strong>{{ order.createdByName || '—' }}</strong>
+          <span class="summary-caption">Utilisateur à l’origine de la commande</span>
+        </article>
+      </section>
+
+      <section class="details-card">
+        <div class="section-header">
+          <div>
+            <h2>Produits commandés</h2>
+            <p>Articles, quantités et prix enregistrés sur cette commande.</p>
+          </div>
+          <span class="count-badge">{{ order.lines.length }} ligne(s)</span>
+        </div>
+
+      <div class="table-wrapper table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th>Quantité commandée</th>
+              <th>Quantité reçue</th>
+              <th>Prix unitaire</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (line of order.lines; track line.id) {
+              <tr>
+                <td>{{ line.productName }}</td>
+                <td>{{ line.quantityOrdered }}</td>
+                <td>{{ line.quantityReceived }}</td>
+                <td class="numeric">
+                  {{ line.unitPrice | number:'1.2-2' }} €
+                </td>
+                <td class="numeric">
+                  {{ line.totalPrice | number:'1.2-2' }} €
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      </section>
+
+      <div class="order-total">
+        <span>Montant total</span>
+        <strong>{{ order.totalAmount | number:'1.2-2' }} €</strong>
+      </div>
+
+      @if (order.notes) {
+        <section class="details-card notes-card">
+          <div class="section-header">
+            <div>
+              <h2>Notes</h2>
+              <p>Informations complémentaires liées à la commande.</p>
+            </div>
+          </div>
+          <p class="notes-content">{{ order.notes }}</p>
+        </section>
+      }
+
+      
+      @if (receiveSuccess) {
+        <div class="alert alert-success" role="status">
+          {{ receiveSuccess }}
+        </div>
+      }
+
+      @if (order.status === 'ORDERED' || order.status === 'PARTIALLY_RECEIVED') {
+        <section class="receipt-section">
+          <h3>Réception des produits</h3>
+
+          @if (showReceiveForm) {
+            @if (receiveError) {
+              <div class="alert alert-error" role="alert">
+                {{ receiveError }}
+              </div>
+            }
+
+            <form (ngSubmit)="submitReceipt()">
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Produit</th>
+                      <th>Déjà reçu</th>
+                      <th>Reste à recevoir</th>
+                      <th>Quantité reçue maintenant</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    @for (line of receiveLines; track line.lineId) {
+                      <tr>
+                        <td>{{ line.productName }}</td>
+                        <td>{{ line.quantityReceived }}</td>
+                        <td>{{ getRemainingQuantity(line) }}</td>
+                        <td>
+                          <input
+                            type="number"
+                            [name]="'received-' + line.lineId"
+                            [(ngModel)]="line.quantityToReceive"
+                            min="0"
+                            [max]="getRemainingQuantity(line)"
+                            step="1"
+                            required
+                            [disabled]="receiving"
+                            [attr.aria-label]="'Quantité reçue : ' + line.productName"
+                          />
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <p class="help-text">
+                Laissez 0 pour les produits qui ne sont pas encore arrivés.
+              </p>
+
+              <div class="form-actions">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  (click)="cancelReceiving()"
+                  [disabled]="receiving"
+                >
+                  Annuler
+                </button>
+
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  [disabled]="receiving"
+                >
+                  {{ receiving ? 'Enregistrement...' : 'Valider la réception' }}
+                </button>
+              </div>
+            </form>
+          } @else {
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="startReceiving()"
+            >
+              Réceptionner les produits
+            </button>
+          }
+        </section>
+      }
+
+      @if (order.status === 'DRAFT') {
+        <div class="form-actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="startEditOrder(order)"
+            [disabled]="updatingStatus"
+          >
+            <i class="bi bi-pencil" aria-hidden="true"></i>
+            Modifier la commande
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="orderPurchaseOrder(order.id)"
+            [disabled]="updatingStatus"
+          >
+            {{
+              updatingStatus
+                ? 'Confirmation en cours...'
+                : 'Confirmer la commande'
+            }}
+          </button>
+        </div>
+      }
+      
+      @if (order.status === 'DRAFT' || order.status === 'ORDERED') {
+        <div class="form-actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="openCancelConfirmation()"
+            [disabled]="cancelling"
+          >
+            Annuler la commande
+          </button>
+        </div>
+      }
+
+      @if (cancelSuccess) {
+        <div class="alert alert-success" role="status">
+          {{ cancelSuccess }}
+        </div>
+      }
+
+      @if (cancelError && !showCancelConfirmation) {
+        <div class="alert alert-error" role="alert">
+          {{ cancelError }}
+        </div>
+      }
+
+      
+@if (showCancelConfirmation) {
+  <div class="modal-backdrop confirmation-backdrop"
+       (click)="closeCancelConfirmation()">
+    <section
+      class="modal-dialog"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="cancel-order-title"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="cancel-order-title">Annuler cette commande ?</h2>
+
+      <p>
+        La commande {{ order.orderNumber }} sera marquée comme annulée.
+        Cette action ne pourra pas être effectuée depuis cette fenêtre
+        une fois confirmée.
+      </p>
+
+      @if (cancelError) {
+        <div class="alert alert-error" role="alert">
+          {{ cancelError }}
+        </div>
+      }
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="closeCancelConfirmation()"
+          [disabled]="cancelling"
+        >
+          Retour
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="confirmCancelOrder()"
+          [disabled]="cancelling"
+        >
+          {{ cancelling ? 'Annulation...' : 'Confirmer l’annulation' }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+
+      </section>
+  }
+</section>
+
+@if (showArchiveConfirmation && orderToArchive; as order) {
+  <div class="modal-backdrop confirmation-backdrop" (click)="closeArchiveConfirmation()">
+    <section
+      class="modal-dialog"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="archive-order-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="panel-header">
+        <h2 id="archive-order-title">Archiver cette commande ?</h2>
+      </div>
+
+      <p>
+        La commande <strong>{{ order.orderNumber }}</strong> sera déplacée dans les archives.
+        Elle restera consultable en activant le filtre « Afficher les archives ».
+      </p>
+
+      @if (archiveError) {
+        <div class="alert alert-error" role="alert">{{ archiveError }}</div>
+      }
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="closeArchiveConfirmation()"
+          [disabled]="archivingOrderId !== null"
+        >
+          Annuler
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="confirmArchiveOrder()"
+          [disabled]="archivingOrderId === order.id"
+        >
+          {{ archivingOrderId === order.id ? 'Archivage...' : 'Confirmer l’archivage' }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+

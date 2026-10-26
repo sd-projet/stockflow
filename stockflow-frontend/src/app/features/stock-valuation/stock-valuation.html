@@ -1,0 +1,107 @@
+<section class="valuation-page">
+  <header class="page-header">
+    <div>
+      <a class="back-link" routerLink="/dashboard">
+        <i class="bi bi-arrow-left" aria-hidden="true"></i>
+        Retour au tableau de bord
+      </a>
+      <h1>Valorisation du stock</h1>
+      <p>Consultez la valeur théorique des produits actuellement en stock.</p>
+    </div>
+    <button type="button" class="refresh-button" (click)="loadProducts()" [disabled]="loading()">
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+      {{ loading() ? 'Actualisation...' : 'Actualiser' }}
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert-error" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <section class="summary-grid" aria-label="Résumé de la valorisation">
+    <article class="summary-card primary-summary">
+      <span class="summary-label">Valeur totale du stock</span>
+      <strong class="summary-value">{{ totalStockValue() | currency:'EUR':'symbol':'1.2-2' }}</strong>
+      <span class="summary-detail">Quantité en stock × prix unitaire</span>
+    </article>
+    <article class="summary-card">
+      <span class="summary-label">Produits actifs avec un prix</span>
+      <strong class="summary-value">{{ productsWithPrice() | number }}</strong>
+      <span class="summary-detail">Avec un prix unitaire supérieur à 0 €</span>
+    </article>
+    <article class="summary-card" [class.missing-price-card]="productsWithoutPrice() > 0">
+      <span class="summary-label">Prix à renseigner</span>
+      <strong class="summary-value">{{ productsWithoutPrice() | number }}</strong>
+      <span class="summary-detail">Produits actifs avec un prix unitaire nul</span>
+    </article>
+  </section>
+
+  <section class="valuation-panel">
+    <div class="panel-header">
+      <div>
+        <h2>Détail par produit</h2>
+        <p>Les produits inactifs ne sont pas inclus dans le calcul, comme sur le tableau de bord.</p>
+      </div>
+      <input
+        type="search"
+        name="searchValuation"
+        placeholder="Rechercher une référence, un nom ou une catégorie..."
+        aria-label="Rechercher un produit"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+      />
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Référence</th>
+            <th>Produit</th>
+            <th>Catégorie</th>
+            <th class="numeric">Quantité en stock</th>
+            <th class="numeric">Prix unitaire</th>
+            <th class="numeric">Valeur du stock</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (loading()) {
+            <tr><td colspan="6" class="empty-state">Chargement de la valorisation...</td></tr>
+          } @else if (filteredProducts().length === 0) {
+            <tr>
+              <td colspan="6" class="empty-state">
+                {{ searchTerm().trim() ? 'Aucun produit ne correspond à votre recherche.' : 'Aucun produit actif à valoriser.' }}
+              </td>
+            </tr>
+          } @else {
+            @for (product of filteredProducts(); track product.id) {
+              <tr class="product-row" tabindex="0" role="link" (click)="openProduct(product.id)" (keydown.enter)="openProduct(product.id)">
+                <td><span class="reference">{{ product.reference }}</span></td>
+                <td class="product-name">{{ product.name }}</td>
+                <td>{{ product.categoryName }}</td>
+                <td class="numeric">{{ product.quantityInStock | number }} {{ product.unit }}</td>
+                <td class="numeric">
+                  @if (product.unitPrice > 0) {
+                    {{ product.unitPrice | currency:'EUR':'symbol':'1.2-2' }}
+                  } @else {
+                    <span class="missing-price">À renseigner</span>
+                  }
+                </td>
+                <td class="numeric stock-value">{{ productStockValue(product) | currency:'EUR':'symbol':'1.2-2' }}</td>
+              </tr>
+            }
+          }
+        </tbody>
+        @if (!loading() && filteredProducts().length > 0) {
+          <tfoot>
+            <tr>
+              <td colspan="5">Valeur des produits affichés</td>
+              <td class="numeric stock-value">{{ displayedProductsValue() | currency:'EUR':'symbol':'1.2-2' }}</td>
+            </tr>
+          </tfoot>
+        }
+      </table>
+    </div>
+    <p class="table-hint"><i class="bi bi-info-circle" aria-hidden="true"></i> Cliquez sur une ligne pour ouvrir la fiche du produit.</p>
+  </section>
+</section>

@@ -1,0 +1,35 @@
+
+@if (totalItems() > 0) {
+  <nav class="pagination" aria-label="Pagination">
+    <p class="pagination-info" aria-live="polite">
+      Affichage de {{ firstItem() }} à {{ lastItem() }}
+      sur {{ totalItems() }} élément(s)
+    </p>
+
+    <div class="pagination-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="previousPage()"
+        [disabled]="currentPage() <= 1"
+        aria-label="Page précédente"
+      >
+        Précédent
+      </button>
+
+      <span class="pagination-page">
+        Page {{ currentPage() }} sur {{ totalPages() }}
+      </span>
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="nextPage()"
+        [disabled]="currentPage() >= totalPages()"
+        aria-label="Page suivante"
+      >
+        Suivant
+      </button>
+    </div>
+  </nav>
+}
