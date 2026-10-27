@@ -1,4 +1,3 @@
-
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -9,13 +8,14 @@ import {
   PurchaseOrderUpdateRequest,
   PurchaseOrderReceiveRequest
 } from './purchase-order';
+import { API_BASE } from '../../core/api-base';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PurchaseOrderApi {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:8080/api/purchase-orders';
+  private readonly apiUrl = `${API_BASE}/api/purchase-orders`;
 
   getAll(): Observable<PurchaseOrder[]> {
     return this.http.get<PurchaseOrder[]>(this.apiUrl);

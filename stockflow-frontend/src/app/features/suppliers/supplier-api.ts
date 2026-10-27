@@ -1,15 +1,15 @@
-
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Supplier, SupplierRequest } from './supplier';
+import { API_BASE } from '../../core/api-base';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SupplierApi {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:8080/api/suppliers';
+  private readonly apiUrl = `${API_BASE}/api/suppliers`;
 
   getAll(): Observable<Supplier[]> {
     return this.http.get<Supplier[]>(this.apiUrl);

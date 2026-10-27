@@ -2,13 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Category, CategoryRequest } from './category';
+import { API_BASE } from '../../core/api-base';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CategoryApi {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:8080/api/categories';
+  private readonly apiUrl = `${API_BASE}/api/categories`;
 
   getAll(): Observable<Category[]> {
     return this.http.get<Category[]>(this.apiUrl);

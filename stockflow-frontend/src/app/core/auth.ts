@@ -2,13 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { AuthResponse, LoginRequest, RegisterRequest, StoredUser, UserRole } from './auth.model';
+import { API_BASE } from './api-base';
 
 @Injectable({
   providedIn: 'root'
 })
 export class Auth {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:8080/api/auth';
+  private readonly apiUrl = `${API_BASE}/api/auth`;
 
   login(request: LoginRequest): Observable<AuthResponse> {
     return this.http

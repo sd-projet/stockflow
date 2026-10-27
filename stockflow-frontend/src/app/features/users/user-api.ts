@@ -2,13 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { User, UserCreateRequest, UserUpdateRequest } from './user';
+import { API_BASE } from '../../core/api-base';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserApi {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:8080/api/users';
+  private readonly apiUrl = `${API_BASE}/api/users`;
 
   getAll(): Observable<User[]> {
     return this.http.get<User[]>(this.apiUrl);

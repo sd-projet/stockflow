@@ -1,8 +1,8 @@
-
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { API_BASE } from './api-base';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
@@ -11,7 +11,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const isLoginRequest = req.url.endsWith('/api/auth/login');
 
   const authReq =
-    token && req.url.startsWith('http://localhost:8080/api/')
+    token && req.url.startsWith(`${API_BASE}/api/`)
       ? req.clone({
           setHeaders: {
             Authorization: `Bearer ${token}`
