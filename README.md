@@ -70,8 +70,8 @@ Les outils suivants doivent être installés :
 ### 1. Cloner le dépôt
 
 ```bash
-git clone <URL_DU_DEPOT>
-cd <NOM_DU_DEPOT>
+git clone git@github.com:sd-projet/stockflow.git
+cd stockflow
 ```
 
 ### 2. Configurer la base de données
