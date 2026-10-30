@@ -8,7 +8,14 @@ Ce projet vise à proposer une solution de gestion métier avec une interface mo
 
 ## Démonstration
 
-- **Application en ligne :** à venir.
+- **Application en ligne :** https://stockflow-three-steel.vercel.app/
+Si le backend ne fonctionne pas, relancer le backend avec https://stockflow-g7pe.onrender.com/, puis retourner à l'application.
+
+![alt text](image.png)
+
+![alt text](image-1.png)
+
+![alt text](image-2.png)
 
 ## Fonctionnalités
 
